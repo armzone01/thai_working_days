@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คำนวณวันทำการไทย</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen p-6">
+    <div class="max-w-5xl mx-auto">
+        <!-- Input Form -->
+        <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                คำนวณวันทำการไทย
+            </h1>
+            
+            <!-- Mode Selection -->
+            <div class="mb-6">
+                <label class="block text-gray-700 font-semibold mb-3">เลือกโหมดการคำนวณ</label>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <button onclick="setMode('days')" id="modeDays" class="mode-btn p-4 rounded-lg border-2 border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold transition">
+                        🔢 คำนวณจากจำนวนวันทำการ
+                    </button>
+                    <button onclick="setMode('date')" id="modeDate" class="mode-btn p-4 rounded-lg border-2 border-gray-300 bg-white text-gray-700 font-semibold hover:border-indigo-300 transition">
+                        📅 คำนวณจากช่วงวันที่
+                    </button>
+                </div>
+            </div>
+
+            <!-- Working Days Mode -->
+            <div id="daysMode" class="mode-content">
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">วันที่เริ่มต้น</label>
+                        <input type="date" id="startDateDays" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">จำนวนวันทำการ</label>
+                        <input type="number" id="workingDaysInput" min="1" value="30" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition" placeholder="เช่น 30">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date Range Mode -->
+            <div id="dateMode" class="mode-content hidden">
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">วันที่เริ่มต้น</label>
+                        <input type="date" id="startDate" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">วันที่สิ้นสุด</label>
+                        <input type="date" id="endDate" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none transition">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <button onclick="calculate()" class="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-bold py-4 px-6 rounded-lg transition shadow-lg hover:shadow-xl">
+                    คำนวณวันทำการ
+                </button>
+                <button onclick="clearData()" class="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-bold py-4 px-6 rounded-lg transition shadow-lg hover:shadow-xl">
+                    ล้างข้อมูล
+                </button>
+            </div>
+            
+            <div id="holidayStatus" class="mt-4 text-sm text-gray-600 text-center"></div>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-6">
+                <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-6">
+                    <p class="text-lg text-gray-700" id="dateRange"></p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-md">
+                        <div class="text-4xl font-bold mb-2" id="workingDays">0</div>
+                        <div class="text-green-100">วันทำการ</div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg p-6 text-white shadow-md">
+                        <div class="text-4xl font-bold mb-2" id="totalDays">0</div>
+                        <div class="text-gray-100">วันทั้งหมด</div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-md">
+                        <div class="text-4xl font-bold mb-2" id="weekendDays">0</div>
+                        <div class="text-blue-100">วันหยุดสุดสัปดาห์</div>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-6 text-white shadow-md">
+                        <div class="text-4xl font-bold mb-2" id="holidayDays">0</div>
+                        <div class="text-red-100">วันหยุดนักขัตฤกษ์</div>
+                    </div>
+                </div>
+
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">รายละเอียดแต่ละวัน</h2>
+                <div class="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <div id="daysList" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-3">หมายเหตุ</h3>
+                <ul class="text-gray-600 space-y-2">
+                    <li>• วันทำการคือวันจันทร์-ศุกร์ที่ไม่ใช่วันหยุดนักขัตฤกษ์</li>
+                    <li>• วันหยุดนักขัตฤกษ์ดึงข้อมูลจาก Nager.Date API (Free)</li>
+                    <li>• รวมวันหยุดชดเชยด้วย</li>
+                    <li>• ข้อมูลสำรอง (Fallback): <strong>1 มกราคม 2568 - 31 ธันวาคม 2569</strong> (1 Jan 2025 - 31 Dec 2026)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'days';
+        let thaiHolidays = {};
+
+        const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 
+                            'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+
+        // Fallback holidays for Thailand
+        const fallbackHolidays = {
+            '2025-01-01': 'วันขึ้นปีใหม่',
+            '2025-04-06': 'วันจักรี',
+            '2025-04-13': 'วันสงกรานต์',
+            '2025-04-14': 'วันสงกรานต์',
+            '2025-04-15': 'วันสงกรานต์',
+            '2025-05-01': 'วันแรงงานแห่งชาติ',
+            '2025-05-05': 'วันฉัตรมงคล',
+            '2025-06-03': 'วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสุทิดา',
+            '2025-07-28': 'วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว',
+            '2025-07-29': 'ชดเชยวันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว',
+            '2025-08-12': 'วันเฉลิมพระชนมพรรษาสมเด็จพระบรมราชชนนี',
+            '2025-10-13': 'วันคล้ายวันสวรรคต ร.9',
+            '2025-10-14': 'ชดเชยวันคล้ายวันสวรรคต ร.9',
+            '2025-10-23': 'วันปิยมหาราช',
+            '2025-12-05': 'วันพ่อแห่งชาติ',
+            '2025-12-10': 'วันรัฐธรรมนูญ',
+            '2025-12-31': 'วันสิ้นปี',
+            '2026-01-01': 'วันขึ้นปีใหม่',
+            '2026-04-06': 'วันจักรี',
+            '2026-04-13': 'วันสงกรานต์',
+            '2026-04-14': 'วันสงกรานต์',
+            '2026-04-15': 'วันสงกรานต์',
+            '2026-05-01': 'วันแรงงานแห่งชาติ',
+            '2026-05-05': 'วันฉัตรมงคล',
+            '2026-06-03': 'วันเฉลิมพระชนมพรรษาสมเด็จพระนางเจ้าสุทิดา',
+            '2026-07-28': 'วันเฉลิมพระชนมพรรษาพระบาทสมเด็จพระเจ้าอยู่หัว',
+            '2026-08-12': 'วันเฉลิมพระชนมพรรษาสมเด็จพระบรมราชชนนี',
+            '2026-10-13': 'วันคล้ายวันสวรรคต ร.9',
+            '2026-10-23': 'วันปิยมหาราช',
+            '2026-12-05': 'วันพ่อแห่งชาติ',
+            '2026-12-10': 'วันรัฐธรรมนูญ',
+            '2026-12-31': 'วันสิ้นปี'
+        };
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('modeDate').classList.toggle('mode-active', mode === 'date');
+            document.getElementById('modeDays').classList.toggle('mode-active', mode === 'days');
+            
+            document.getElementById('dateMode').classList.toggle('hidden', mode !== 'date');
+            document.getElementById('daysMode').classList.toggle('hidden', mode !== 'days');
+            
+            if (mode === 'date') {
+                document.getElementById('modeDate').className = 'mode-btn p-4 rounded-lg border-2 border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold transition';
+                document.getElementById('modeDays').className = 'mode-btn p-4 rounded-lg border-2 border-gray-300 bg-white text-gray-700 font-semibold hover:border-indigo-300 transition';
+            } else {
+                document.getElementById('modeDays').className = 'mode-btn p-4 rounded-lg border-2 border-indigo-500 bg-indigo-50 text-indigo-700 font-semibold transition';
+                document.getElementById('modeDate').className = 'mode-btn p-4 rounded-lg border-2 border-gray-300 bg-white text-gray-700 font-semibold hover:border-indigo-300 transition';
+            }
+        }
+
+        async function loadHolidays() {
+            const statusEl = document.getElementById('holidayStatus');
+            statusEl.textContent = '🔄 กำลังโหลดข้อมูลวันหยุด...';
+            
+            try {
+                // Using Nager.Date API (Free, no API key required)
+                const year1 = 2025;
+                const year2 = 2026;
+                
+                const response1 = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year1}/TH`);
+                const data1 = await response1.json();
+                
+                const response2 = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year2}/TH`);
+                const data2 = await response2.json();
+                
+                if (Array.isArray(data1) && Array.isArray(data2)) {
+                    thaiHolidays = {};
+                    [...data1, ...data2].forEach(holiday => {
+                        thaiHolidays[holiday.date] = holiday.localName || holiday.name;
+                    });
+                    statusEl.innerHTML = '✅ โหลดข้อมูลวันหยุดสำเร็จจาก Nager.Date API';
+                    statusEl.className = 'mt-4 text-sm text-green-600 text-center font-semibold';
+                } else {
+                    throw new Error('API response invalid');
+                }
+                
+            } catch (error) {
+                console.error('Error loading holidays:', error);
+                thaiHolidays = {...fallbackHolidays};
+                statusEl.innerHTML = '⚠️ ใช้ข้อมูลวันหยุดสำรอง (API ไม่สามารถเชื่อมต่อได้)';
+                statusEl.className = 'mt-4 text-sm text-orange-600 text-center font-semibold';
+            }
+        }
+
+        function formatThaiDate(date) {
+            return `${thaiDays[date.getDay()]} ${date.getDate()} ${thaiMonths[date.getMonth()]} ${date.getFullYear() + 543}`;
+        }
+
+        function isWeekend(date) {
+            const day = date.getDay();
+            return day === 0 || day === 6;
+        }
+
+        function isHoliday(date) {
+            const dateStr = date.toISOString().split('T')[0];
+            return thaiHolidays[dateStr] !== undefined;
+        }
+
+        function isWorkingDay(date) {
+            return !isWeekend(date) && !isHoliday(date);
+        }
+
+        function calculateEndDateFromWorkingDays(startDate, targetWorkingDays) {
+            let workingDaysCount = 0;
+            const currentDate = new Date(startDate);
+            
+            while (workingDaysCount < targetWorkingDays) {
+                if (isWorkingDay(currentDate)) {
+                    workingDaysCount++;
+                }
+                if (workingDaysCount < targetWorkingDays) {
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+            }
+            
+            return currentDate;
+        }
+
+        function calculate() {
+            if (currentMode === 'date') {
+                calculateWorkingDays();
+            } else {
+                calculateEndDate();
+            }
+        }
+
+        function calculateEndDate() {
+            const startInput = document.getElementById('startDateDays').value;
+            const workingDaysInput = parseInt(document.getElementById('workingDaysInput').value);
+
+            if (!startInput) {
+                alert('กรุณาเลือกวันที่เริ่มต้น');
+                return;
+            }
+
+            if (!workingDaysInput || workingDaysInput < 1) {
+                alert('กรุณาใส่จำนวนวันทำการที่ถูกต้อง');
+                return;
+            }
+
+            const startDate = new Date(startInput);
+            const endDate = calculateEndDateFromWorkingDays(startDate, workingDaysInput);
+
+            // Now calculate the full range
+            calculateRange(startDate, endDate);
+        }
+
+        function calculateWorkingDays() {
+            const startInput = document.getElementById('startDate').value;
+            const endInput = document.getElementById('endDate').value;
+
+            if (!startInput || !endInput) {
+                alert('กรุณาเลือกวันที่เริ่มต้นและวันที่สิ้นสุด');
+                return;
+            }
+
+            const startDate = new Date(startInput);
+            const endDate = new Date(endInput);
+
+            if (startDate > endDate) {
+                alert('วันที่เริ่มต้นต้องไม่มากกว่าวันที่สิ้นสุด');
+                return;
+            }
+
+            calculateRange(startDate, endDate);
+        }
+
+        function calculateRange(startDate, endDate) {
+            let workingDays = 0;
+            let totalDays = 0;
+            let weekendDays = 0;
+            let holidayDays = 0;
+            const daysList = [];
+
+            const currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                totalDays++;
+                const isWE = isWeekend(currentDate);
+                const isHol = isHoliday(currentDate);
+                const dateStr = currentDate.toISOString().split('T')[0];
+
+                let status = 'วันทำการ';
+                let statusColor = 'text-green-600 bg-green-50';
+
+                if (isWE) {
+                    weekendDays++;
+                    status = 'วันหยุดสุดสัปดาห์';
+                    statusColor = 'text-blue-600 bg-blue-50';
+                } else if (isHol) {
+                    holidayDays++;
+                    status = thaiHolidays[dateStr];
+                    statusColor = 'text-red-600 bg-red-50';
+                } else {
+                    workingDays++;
+                }
+
+                daysList.push({
+                    date: new Date(currentDate),
+                    status: status,
+                    isWorkingDay: !isWE && !isHol,
+                    statusColor: statusColor
+                });
+
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            // Display results
+            let rangeText = `<strong>ช่วงเวลา:</strong> ${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`;
+            if (currentMode === 'days') {
+                rangeText = `<strong>เริ่มต้น:</strong> ${formatThaiDate(startDate)}<br><strong>สิ้นสุด:</strong> ${formatThaiDate(endDate)} <span class="text-indigo-600 font-bold">(${document.getElementById('workingDaysInput').value} วันทำการ)</span>`;
+            }
+            
+            document.getElementById('dateRange').innerHTML = rangeText;
+            document.getElementById('workingDays').textContent = workingDays;
+            document.getElementById('totalDays').textContent = totalDays;
+            document.getElementById('weekendDays').textContent = weekendDays;
+            document.getElementById('holidayDays').textContent = holidayDays;
+
+            const daysListHTML = daysList.map(day => {
+                const borderClass = day.isWorkingDay ? 'border-green-200' : 'border-gray-200';
+                const bgClass = day.isWorkingDay ? 'bg-green-200' : 'bg-gray-200';
+                return `
+                    <div class="flex justify-between items-center p-3 rounded-lg ${day.statusColor} border ${borderClass}">
+                        <span class="font-medium">${formatThaiDate(day.date)}</span>
+                        <span class="text-sm px-3 py-1 rounded-full ${bgClass}">
+                            ${day.status}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('daysList').innerHTML = daysListHTML;
+            document.getElementById('results').classList.remove('hidden');
+            
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function clearData() {
+            // Clear all input fields
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('startDateDays').value = '';
+            document.getElementById('workingDaysInput').value = '';
+            
+            // Hide results
+            document.getElementById('results').classList.add('hidden');
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        window.onload = async function() {
+            await loadHolidays();
+            
+            const today = new Date();
+            const futureDate = new Date(today);
+            futureDate.setMonth(futureDate.getMonth() + 3);
+            
+            document.getElementById('startDate').value = today.toISOString().split('T')[0];
+            document.getElementById('endDate').value = futureDate.toISOString().split('T')[0];
+            document.getElementById('startDateDays').value = today.toISOString().split('T')[0];
+        };
+    </script>
+</body>
+</html>
